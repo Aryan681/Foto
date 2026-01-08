@@ -13,14 +13,14 @@ export default function ImageCard({ img, onOpen }) {
   const [showEmojiBar, setShowEmojiBar] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [showHeart, setShowHeart] = useState(false);
-  const [showUndo, setShowUndo] = useState(false); 
+  const [showUndo, setShowUndo] = useState(false);
   const lastTap = useRef(0);
   const timerRef = useRef(null);
-  
+
   const identity = useStore((state) => state.identity);
   const { id: userId, name, color } = identity ?? {};
 
-  const { data } = db.useQuery({ 
+  const { data } = db.useQuery({
     interactions: { $: { where: { imageId: img.id } } }
   });
 
@@ -41,7 +41,7 @@ export default function ImageCard({ img, onOpen }) {
     };
   }, [interactions]);
 
-  //  Add, Update, or Remove reaction
+  // 	Add, Update, or Remove reaction
   const handleReactionToggle = useCallback((emoji) => {
     if (userReaction) {
       if (userReaction.emoji === emoji) {
@@ -56,7 +56,7 @@ export default function ImageCard({ img, onOpen }) {
         setTimeout(() => setShowHeart(false), 800);
       }
     } else {
-      // No reaction 
+      // No reaction
       db.transact(
         db.tx.interactions[id()].update({
           imageId: img.id,
@@ -80,12 +80,9 @@ export default function ImageCard({ img, onOpen }) {
       // Double Tap
       handleReactionToggle("❤️");
     } else {
-      // Single Tap
-      timerRef.current = setTimeout(() => {
-        if (Date.now() - lastTap.current >= 300) {
-          onOpen();
-        }
-      }, 300);
+      // Single Tap (Removed onOpen() call here)
+      // The timer logic for single tap can be removed entirely
+      // since the default behavior is now just to set lastTap.current
     }
     lastTap.current = now;
   };
@@ -105,14 +102,20 @@ export default function ImageCard({ img, onOpen }) {
     setShowEmojiBar(false);
   }, [handleReactionToggle]);
 
+  // New handler for opening the comment box
+  const handleOpenComments = useCallback((e) => {
+    e.stopPropagation(); // Prevent the card's handleInteraction from triggering
+    onOpen();
+  }, [onOpen]);
+
   return (
-    <div 
+    <div
       onClick={handleInteraction}
       className="group relative bg-panel border border-border rounded-2xl overflow-hidden hover:border-blue-500/40 transition-all cursor-pointer shadow-lg active:scale-[0.98]"
     >
       <div className="relative aspect-square overflow-hidden bg-white/5">
-        
-        {/*  Heart Animation  */}
+
+        {/* Heart Animation 	*/}
         <AnimatePresence>
           {showHeart && (
             <motion.div
@@ -126,7 +129,7 @@ export default function ImageCard({ img, onOpen }) {
           )}
         </AnimatePresence>
 
-        {/*  Undo Animation  */}
+        {/* Undo Animation 	*/}
         <AnimatePresence>
           {showUndo && (
             <motion.div
@@ -142,23 +145,23 @@ export default function ImageCard({ img, onOpen }) {
 
         {!imageLoaded && (
           <div className="absolute inset-0 bg-white/5 animate-pulse flex items-center justify-center">
-             <div className="w-8 h-8 border-2 border-white/10 border-t-blue-500 rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-white/10 border-t-blue-500 rounded-full animate-spin" />
           </div>
         )}
 
-        <img 
-          src={img.url} 
-          alt="" 
+        <img
+          src={img.url}
+          alt=""
           loading="lazy"
           decoding="async"
           onLoad={() => setImageLoaded(true)}
           className={`
-            w-full h-full object-cover transition-all duration-700
-            ${imageLoaded ? "opacity-100 scale-100" : "opacity-0 scale-105 blur-lg"}
-            group-hover:scale-110
-          `} 
+						w-full h-full object-cover transition-all duration-700
+						${imageLoaded ? "opacity-100 scale-100" : "opacity-0 scale-105 blur-lg"}
+						group-hover:scale-110
+					`}
         />
-        
+
         <div className="absolute inset-0 bg-linear-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4 flex flex-col justify-end">
           <p className="text-white text-[10px] font-bold uppercase tracking-widest mb-1 opacity-60">
             {img.author || "Unsplash Creator"}
@@ -167,22 +170,22 @@ export default function ImageCard({ img, onOpen }) {
       </div>
 
       <div className="p-3 relative flex items-center justify-between bg-panel/50 backdrop-blur-sm border-t border-border/30">
-        <EmojiBar 
-          isVisible={showEmojiBar} 
-          emojis={["❤️", "🔥", "😂", "😮", "👍"]} 
-          onReact={handleReact} 
-          onMouseEnter={handleMouseEnter} 
+        <EmojiBar
+          isVisible={showEmojiBar}
+          emojis={["❤️", "🔥", "😂", "😮", "👍"]}
+          onReact={handleReact}
+          onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
           userReaction={userReaction}
         />
-        <EmojiStack 
-          uniqueEmojis={uniqueEmojis} 
+        <EmojiStack
+          uniqueEmojis={uniqueEmojis}
           totalCount={totalReactions}
-          onMouseEnter={handleMouseEnter} 
+          onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
           userReaction={userReaction}
         />
-        <div className="flex items-center gap-1 text-gray-500">
+        <div className="flex items-center gap-1 text-gray-500 cursor-pointer" onClick={handleOpenComments}> {/* ADDED onClick HANDLER */}
           <MessageSquare size={16} className="text-gray-400" />
           <span className="text-[12px] font-bold">{commentCount}</span>
         </div>
