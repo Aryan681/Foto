@@ -1,33 +1,45 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import { db } from "../../services/instantDb";
 import { id } from "@instantdb/react";
 import { MessageSquare } from "lucide-react";
-import { getIdentity } from "../../utils/identity";
+
+// ✅ Modular Imports & Store
+import { useStore } from "../../store/UseStore";
 import { EmojiBar } from "./compoments/EmojiBar";
 import { EmojiStack } from "./compoments/EmojiStack";
 
 export default function ImageCard({ img, onOpen }) {
   const [showEmojiBar, setShowEmojiBar] = useState(false);
   const timerRef = useRef(null);
-  const quickEmojis = ["💖", "🔥", "😂", "😮", "👍"];
+  
+  // ✅ Zustand: Get global identity
+  const identity = useStore((state) => state.identity);
+  const { name, color } = identity ?? {};
 
-  // 1. Data Sync
+  // 1. Scoped Real-Time Query
   const { data } = db.useQuery({ 
     interactions: { $: { where: { imageId: img.id } } }
   });
 
   const interactions = data?.interactions ?? [];
-  const { name, color } = getIdentity();
+  const quickEmojis = ["💖", "🔥", "😂", "😮", "👍"];
 
-  // 2. Interaction Logic
-  const emojiInteractions = interactions.filter(i => i.type === 'emoji');
-  const commentCount = interactions.filter(i => i.type === 'comment').length;
-  
-  const sortedEmojis = [...emojiInteractions].sort((a, b) => b.createdAt - a.createdAt);
-  const uniqueEmojis = [...new Set(sortedEmojis.map(i => i.emoji))].slice(0, 3);
-  const totalReactions = emojiInteractions.length;
+  // 2. Optimized Data Processing with useMemo
+  const { uniqueEmojis, totalReactions, commentCount } = useMemo(() => {
+    const emojiInteractions = interactions.filter(i => i.type === 'emoji');
+    const comments = interactions.filter(i => i.type === 'comment');
+    
+    const sorted = [...emojiInteractions].sort((a, b) => b.createdAt - a.createdAt);
+    const unique = [...new Set(sorted.map(i => i.emoji))].slice(0, 3);
+    
+    return {
+      uniqueEmojis: unique,
+      totalReactions: emojiInteractions.length,
+      commentCount: comments.length
+    };
+  }, [interactions]);
 
-  // 3. Hover Handlers
+  // 3. Hover Logic with 0.5s Grace Period
   const handleMouseEnter = () => {
     if (timerRef.current) clearTimeout(timerRef.current);
     setShowEmojiBar(true);
@@ -37,6 +49,7 @@ export default function ImageCard({ img, onOpen }) {
     timerRef.current = setTimeout(() => setShowEmojiBar(false), 500);
   };
 
+  // 4. Transaction Handler
   const handleReact = (emoji, e) => {
     e.stopPropagation();
     db.transact(
@@ -55,9 +68,8 @@ export default function ImageCard({ img, onOpen }) {
   return (
     <div 
       onClick={onOpen}
-      className="group relative bg-panel border border-border rounded-2xl overflow-hidden hover:border-accent/40 transition-all cursor-pointer shadow-lg active:scale-[0.98]"
+      className="group relative bg-panel border border-border rounded-2xl overflow-hidden hover:border-blue-500/40 transition-all cursor-pointer shadow-lg active:scale-[0.98]"
     >
-      {/* Visual Asset Section */}
       <div className="relative aspect-square overflow-hidden bg-black/20">
         <img src={img.url} alt="" loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
         <div className="absolute inset-0 bg-linear-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4 flex flex-col justify-end">
@@ -67,7 +79,6 @@ export default function ImageCard({ img, onOpen }) {
         </div>
       </div>
 
-      {/* Footer Section */}
       <div className="p-3 relative flex items-center justify-between bg-panel/50 backdrop-blur-sm border-t border-border/30">
         <EmojiBar 
           isVisible={showEmojiBar} 
@@ -85,7 +96,7 @@ export default function ImageCard({ img, onOpen }) {
         />
         
         <div className="flex items-center gap-1 text-gray-500">
-          <MessageSquare size={20} className="text-gray-400" />
+          <MessageSquare size={16} className="text-gray-400" />
           <span className="text-[12px] font-bold">{commentCount}</span>
         </div>
       </div>
