@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { nanoid } from "nanoid"; // Install: npm install nanoid
 
 export const useStore = create(
   persist(
@@ -18,6 +19,7 @@ export const useStore = create(
 
           return {
             identity: {
+              id: nanoid(), // ✅ NEW: Unique ID for tracking reactions
               name: `${adjectives[Math.floor(Math.random() * adjectives.length)]} ${
                 nouns[Math.floor(Math.random() * nouns.length)]
               }`,
@@ -28,15 +30,14 @@ export const useStore = create(
       },
 
       // --- UI State ---
-      selectedImg: null, // Scoped for InteractionModal
+      selectedImg: null,
       setSelectedImg: (img) => set({ selectedImg: img }),
 
-      isFeedOpen: false, // Scoped for Mobile Feed Toggle
+      isFeedOpen: false,
       setIsFeedOpen: (isOpen) => set({ isFeedOpen: isOpen }),
     }),
     {
       name: "stat-genie-context",
-      // Only persist the identity to localStorage
       partialize: (state) => ({ identity: state.identity }),
     }
   )

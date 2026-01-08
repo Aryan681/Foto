@@ -12,18 +12,24 @@ import { EmojiStack } from "./compoments/EmojiStack";
 export default function ImageCard({ img, onOpen }) {
   const [showEmojiBar, setShowEmojiBar] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [showHeart, setShowHeart] = useState(false); // ✅ Animation state
-  const lastTap = useRef(0); // ✅ Track tap timing
+  const [showHeart, setShowHeart] = useState(false);
+  const [showUndo, setShowUndo] = useState(false); // ✅ NEW: Undo animation
+  const lastTap = useRef(0);
   const timerRef = useRef(null);
   
   const identity = useStore((state) => state.identity);
-  const { name, color } = identity ?? {};
+  const { id: userId, name, color } = identity ?? {};
 
   const { data } = db.useQuery({ 
     interactions: { $: { where: { imageId: img.id } } }
   });
 
   const interactions = data?.interactions ?? [];
+
+  // Check if current user already reacted
+  const userReaction = useMemo(() => {
+    return interactions.find(i => i.type === 'emoji' && i.userId === userId);
+  }, [interactions, userId]);
 
   const { uniqueEmojis, totalReactions, commentCount } = useMemo(() => {
     const emojiInteractions = interactions.filter(i => i.type === 'emoji');
@@ -36,33 +42,57 @@ export default function ImageCard({ img, onOpen }) {
     };
   }, [interactions]);
 
-  // ✅ Double Tap Logic
-// Inside ImageCard.jsx
-const handleInteraction = (e) => {
-  const now = Date.now();
-  if (now - lastTap.current < 300) {
-    // Double Tap: React
-    db.transact(db.tx.interactions[id()].update({
-      imageId: img.id,
-      type: "emoji",
-      emoji: "❤️",
-      user: name,
-      userColor: color,
-      createdAt: Date.now()
-    }));
-    setShowHeart(true);
-    setTimeout(() => setShowHeart(false), 800);
-  } else {
-    // Single Tap: Delayed Open
-    // We use a small timeout to ensure it wasn't the first half of a double tap
-    timerRef.current = setTimeout(() => {
+  // ✅ UPDATED: Add, Update, or Remove reaction
+  const handleReactionToggle = useCallback((emoji) => {
+    if (userReaction) {
+      if (userReaction.emoji === emoji) {
+        // ✅ Same emoji clicked = REMOVE reaction
+        db.transact(db.tx.interactions[userReaction.id].delete());
+        setShowUndo(true);
+        setTimeout(() => setShowUndo(false), 800);
+      } else {
+        // Different emoji = UPDATE reaction
+        db.transact(
+          db.tx.interactions[userReaction.id].update({ emoji, createdAt: Date.now() })
+        );
+        setShowHeart(true);
+        setTimeout(() => setShowHeart(false), 800);
+      }
+    } else {
+      // No reaction = ADD new reaction
+      db.transact(
+        db.tx.interactions[id()].update({
+          imageId: img.id,
+          type: "emoji",
+          emoji,
+          user: name,
+          userId,
+          userColor: color,
+          createdAt: Date.now()
+        })
+      );
+      setShowHeart(true);
+      setTimeout(() => setShowHeart(false), 800);
+    }
+  }, [userReaction, img.id, name, userId, color]);
+
+  // Double Tap Logic
+  const handleInteraction = (e) => {
+    const now = Date.now();
+    if (now - lastTap.current < 300) {
+      // Double Tap: Toggle heart reaction
+      handleReactionToggle("❤️");
+    } else {
+      // Single Tap: Delayed Open
+      timerRef.current = setTimeout(() => {
         if (Date.now() - lastTap.current >= 300) {
-            onOpen();
+          onOpen();
         }
-    }, 300);
-  }
-  lastTap.current = now;
-};
+      }, 300);
+    }
+    lastTap.current = now;
+  };
+
   const handleMouseEnter = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
     setShowEmojiBar(true);
@@ -74,20 +104,18 @@ const handleInteraction = (e) => {
 
   const handleReact = useCallback((emoji, e) => {
     e.stopPropagation();
-    db.transact(db.tx.interactions[id()].update({
-      imageId: img.id, type: "emoji", emoji, user: name, userColor: color, createdAt: Date.now()
-    }));
+    handleReactionToggle(emoji);
     setShowEmojiBar(false);
-  }, [img.id, name, color]);
+  }, [handleReactionToggle]);
 
   return (
     <div 
-      onClick={handleInteraction} // ✅ Use unified interaction handler
+      onClick={handleInteraction}
       className="group relative bg-panel border border-border rounded-2xl overflow-hidden hover:border-blue-500/40 transition-all cursor-pointer shadow-lg active:scale-[0.98]"
     >
       <div className="relative aspect-square overflow-hidden bg-white/5">
         
-        {/* ✅ Visual Heart Pop Animation */}
+        {/* ✅ Heart Animation (Add/Update) */}
         <AnimatePresence>
           {showHeart && (
             <motion.div
@@ -97,6 +125,20 @@ const handleInteraction = (e) => {
               className="absolute inset-0 z-50 flex items-center justify-center text-red-500 drop-shadow-2xl pointer-events-none"
             >
               <Heart size={80} fill="currentColor" strokeWidth={0} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ✅ NEW: Undo Animation (Remove) */}
+        <AnimatePresence>
+          {showUndo && (
+            <motion.div
+              initial={{ scale: 1.5, opacity: 1 }}
+              animate={{ scale: 0.8, opacity: 0.5 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-50 flex items-center justify-center text-gray-400 drop-shadow-2xl pointer-events-none"
+            >
+              <Heart size={80} strokeWidth={2} fill="none" />
             </motion.div>
           )}
         </AnimatePresence>
@@ -129,12 +171,19 @@ const handleInteraction = (e) => {
 
       <div className="p-3 relative flex items-center justify-between bg-panel/50 backdrop-blur-sm border-t border-border/30">
         <EmojiBar 
-          isVisible={showEmojiBar} emojis={["❤️", "🔥", "😂", "😮", "👍"]} 
-          onReact={handleReact} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
+          isVisible={showEmojiBar} 
+          emojis={["❤️", "🔥", "😂", "😮", "👍"]} 
+          onReact={handleReact} 
+          onMouseEnter={handleMouseEnter} 
+          onMouseLeave={handleMouseLeave}
+          userReaction={userReaction}
         />
         <EmojiStack 
-          uniqueEmojis={uniqueEmojis} totalCount={totalReactions}
-          onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
+          uniqueEmojis={uniqueEmojis} 
+          totalCount={totalReactions}
+          onMouseEnter={handleMouseEnter} 
+          onMouseLeave={handleMouseLeave}
+          userReaction={userReaction}
         />
         <div className="flex items-center gap-1 text-gray-500">
           <MessageSquare size={16} className="text-gray-400" />

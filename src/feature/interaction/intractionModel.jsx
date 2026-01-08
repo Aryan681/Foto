@@ -13,7 +13,7 @@ import { CommentInput } from "./Component/CommentInput";
 export default function InteractionModal({ img, onClose }) {
   const [comment, setComment] = useState("");
   const identity = useStore((state) => state.identity);
-  const { name, color } = identity ?? {};
+  const { id: userId, name, color } = identity ?? {};
 
   const { data, isLoading } = db.useQuery({
     interactions: { $: { where: { imageId: img.id } } },
@@ -43,12 +43,13 @@ export default function InteractionModal({ img, onClose }) {
         type: "comment",
         text: comment,
         user: name,
+        userId, // ✅ Track user for comments too
         userColor: color,
         createdAt: Date.now(),
       })
     );
     setComment("");
-  }, [comment, img.id, name, color]);
+  }, [comment, img.id, name, userId, color]);
 
   return (
     <div 
@@ -74,13 +75,12 @@ export default function InteractionModal({ img, onClose }) {
 
         {/* 1. Image View */}
         <div className="h-[25vh] sm:h-[30vh] lg:h-full shrink-0">
-<ImageSection url={img.url} onClose={onClose} imgId={img.id} />
+          <ImageSection url={img.url} onClose={onClose} imgId={img.id} />
         </div>
 
         {/* 2. Discussion Hub */}
         <div className="flex flex-col flex-1 min-h-0 bg-[#0A0C0E]/40 overflow-hidden">
           
-          {/* ✅ CHANGED: Added 'hidden lg:block' to hide header on mobile */}
           <header className="hidden lg:block p-6 border-b border-border bg-panel/30 shrink-0">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-500/10 rounded-lg text-blue-400">
@@ -92,10 +92,8 @@ export default function InteractionModal({ img, onClose }) {
             </div>
           </header>
 
-          {/* Comment list occupies the remaining space */}
           <CommentList isLoading={isLoading} comments={comments} />
 
-          {/* Input pinned at the bottom */}
           <div className="p-4 lg:p-6 bg-linear-to-t from-black to-transparent shrink-0">
              <CommentInput 
                 value={comment} 
