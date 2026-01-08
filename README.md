@@ -1,9 +1,6 @@
 
 ---
 
-### `fotoOwl_INT.md`
-
-```markdown
 # FotoOwl Real-Time Discovery Engine 🚀
 
 A high-performance, real-time image discovery platform built with **React**, **InstantDB**, and **TanStack Query**. This application features a seamless infinite-scroll gallery, a live activity hub, and image-level synchronization for social interactions.
@@ -35,6 +32,10 @@ To eliminate the "loading state" during infinite scrolling, the fetching logic u
 ### 3. Intersection Observer (Proactive Fetch)
 Instead of waiting for the user to hit the bottom of the list, the observer triggers a fetch when the user is within `200px` of the end of the content, keeping the scroll experience fluid.
 
+### 4. Pixel Rendering Optimizations
+- **Background Decoding**: Utilized `decoding="async"` to offload heavy image processing from the main thread, maintaining 60FPS during scroll.
+- **Layout Stability**: Implemented aspect-ratio boxes for all image containers to achieve zero Cumulative Layout Shift (CLS).
+- **Graceful Entry**: Combined React state with CSS transitions to only fade-in images once the browser's `onLoad` event signals pixel-readiness.
 ---
 
 ## 📊 InstantDB Schema & Sync Strategy

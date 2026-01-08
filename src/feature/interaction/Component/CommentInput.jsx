@@ -9,7 +9,7 @@ export const CommentInput = ({ value, onChange, onSubmit }) => (
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Share your thoughts..."
-        className="w-full bg-bg border border-border rounded-2xl py-4 pl-5 pr-14 text-sm outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/20 transition-all placeholder:text-gray-600"
+        className="w-full bg-bg border border-border rounded-2xl py-4 pl-5 pr-14 text-sm outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/20 transition-all placeholder:text-white"
       />
       <button 
         type="submit" 

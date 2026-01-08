@@ -6,7 +6,7 @@ export const ImageSection = ({ url, onClose }) => (
     <img 
       src={url} 
       alt="Focused" 
-      className="max-w-full max-h-full object-contain p-2" 
+      className="max-w-full max-h-full  rounded-2xl object-contain p-2" 
     />
     <button 
       onClick={onClose} 
