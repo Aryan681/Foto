@@ -1,7 +1,8 @@
 import React, { useState, useRef, useMemo, useCallback } from "react";
 import { db } from "../../services/instantDb";
 import { id } from "@instantdb/react";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Heart } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Store & Components
 import { useStore } from "../../store/UseStore";
@@ -10,7 +11,9 @@ import { EmojiStack } from "./compoments/EmojiStack";
 
 export default function ImageCard({ img, onOpen }) {
   const [showEmojiBar, setShowEmojiBar] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false); // ✅ Track actual pixel readiness
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [showHeart, setShowHeart] = useState(false); // ✅ Animation state
+  const lastTap = useRef(0); // ✅ Track tap timing
   const timerRef = useRef(null);
   
   const identity = useStore((state) => state.identity);
@@ -33,6 +36,33 @@ export default function ImageCard({ img, onOpen }) {
     };
   }, [interactions]);
 
+  // ✅ Double Tap Logic
+// Inside ImageCard.jsx
+const handleInteraction = (e) => {
+  const now = Date.now();
+  if (now - lastTap.current < 300) {
+    // Double Tap: React
+    db.transact(db.tx.interactions[id()].update({
+      imageId: img.id,
+      type: "emoji",
+      emoji: "❤️",
+      user: name,
+      userColor: color,
+      createdAt: Date.now()
+    }));
+    setShowHeart(true);
+    setTimeout(() => setShowHeart(false), 800);
+  } else {
+    // Single Tap: Delayed Open
+    // We use a small timeout to ensure it wasn't the first half of a double tap
+    timerRef.current = setTimeout(() => {
+        if (Date.now() - lastTap.current >= 300) {
+            onOpen();
+        }
+    }, 300);
+  }
+  lastTap.current = now;
+};
   const handleMouseEnter = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
     setShowEmojiBar(true);
@@ -52,13 +82,25 @@ export default function ImageCard({ img, onOpen }) {
 
   return (
     <div 
-      onClick={onOpen}
+      onClick={handleInteraction} // ✅ Use unified interaction handler
       className="group relative bg-panel border border-border rounded-2xl overflow-hidden hover:border-blue-500/40 transition-all cursor-pointer shadow-lg active:scale-[0.98]"
     >
-      {/* 1. ASPECT RATIO CONTAINER: Prevents Layout Shift (CLS) */}
       <div className="relative aspect-square overflow-hidden bg-white/5">
         
-        {/* 2. BLUR PLACEHOLDER: Shown while the real pixels are decoding */}
+        {/* ✅ Visual Heart Pop Animation */}
+        <AnimatePresence>
+          {showHeart && (
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1.5, opacity: 1 }}
+              exit={{ scale: 2.2, opacity: 0 }}
+              className="absolute inset-0 z-50 flex items-center justify-center text-red-500 drop-shadow-2xl pointer-events-none"
+            >
+              <Heart size={80} fill="currentColor" strokeWidth={0} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {!imageLoaded && (
           <div className="absolute inset-0 bg-white/5 animate-pulse flex items-center justify-center">
              <div className="w-8 h-8 border-2 border-white/10 border-t-blue-500 rounded-full animate-spin" />
@@ -69,8 +111,8 @@ export default function ImageCard({ img, onOpen }) {
           src={img.url} 
           alt="" 
           loading="lazy"
-          decoding="async" // ✅ CRITICAL: Offloads decoding to a background thread
-          onLoad={() => setImageLoaded(true)} // ✅ Only shows when pixels are READY
+          decoding="async"
+          onLoad={() => setImageLoaded(true)}
           className={`
             w-full h-full object-cover transition-all duration-700
             ${imageLoaded ? "opacity-100 scale-100" : "opacity-0 scale-105 blur-lg"}

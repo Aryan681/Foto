@@ -73,8 +73,8 @@ export default function InteractionModal({ img, onClose }) {
         <div className="lg:hidden w-12 h-1 bg-white/20 rounded-full mx-auto my-3 shrink-0" />
 
         {/* 1. Image View */}
-        <div className=" lg:h-full shrink-0">
-           <ImageSection url={img.url} onClose={onClose} />
+        <div className="h-[25vh] sm:h-[30vh] lg:h-full shrink-0">
+<ImageSection url={img.url} onClose={onClose} imgId={img.id} />
         </div>
 
         {/* 2. Discussion Hub */}
