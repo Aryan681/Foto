@@ -1,9 +1,9 @@
-import React, { useState, useRef, useMemo } from "react";
+import React, { useState, useRef, useMemo, useCallback } from "react";
 import { db } from "../../services/instantDb";
 import { id } from "@instantdb/react";
 import { MessageSquare } from "lucide-react";
 
-// ✅ Modular Imports & Store
+// Store & Components
 import { useStore } from "../../store/UseStore";
 import { EmojiBar } from "./compoments/EmojiBar";
 import { EmojiStack } from "./compoments/EmojiStack";
@@ -12,7 +12,7 @@ export default function ImageCard({ img, onOpen }) {
   const [showEmojiBar, setShowEmojiBar] = useState(false);
   const timerRef = useRef(null);
   
-  // ✅ Zustand: Get global identity
+  // ✅ Zustand Global Identity
   const identity = useStore((state) => state.identity);
   const { name, color } = identity ?? {};
 
@@ -24,7 +24,7 @@ export default function ImageCard({ img, onOpen }) {
   const interactions = data?.interactions ?? [];
   const quickEmojis = ["💖", "🔥", "😂", "😮", "👍"];
 
-  // 2. Optimized Data Processing with useMemo
+  // 2. Data Memoization (O(N log N) Sorting)
   const { uniqueEmojis, totalReactions, commentCount } = useMemo(() => {
     const emojiInteractions = interactions.filter(i => i.type === 'emoji');
     const comments = interactions.filter(i => i.type === 'comment');
@@ -39,18 +39,18 @@ export default function ImageCard({ img, onOpen }) {
     };
   }, [interactions]);
 
-  // 3. Hover Logic with 0.5s Grace Period
-  const handleMouseEnter = () => {
+  // 3. ✅ Performance: Memoized Hover Handlers
+  const handleMouseEnter = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
     setShowEmojiBar(true);
-  };
+  }, []);
 
-  const handleMouseLeave = () => {
+  const handleMouseLeave = useCallback(() => {
     timerRef.current = setTimeout(() => setShowEmojiBar(false), 500);
-  };
+  }, []);
 
-  // 4. Transaction Handler
-  const handleReact = (emoji, e) => {
+  // 4. ✅ Performance: Memoized Transaction Handler
+  const handleReact = useCallback((emoji, e) => {
     e.stopPropagation();
     db.transact(
       db.tx.interactions[id()].update({
@@ -63,7 +63,7 @@ export default function ImageCard({ img, onOpen }) {
       })
     );
     setShowEmojiBar(false);
-  };
+  }, [img.id, name, color]); // Dependencies ensure fresh state in closure
 
   return (
     <div 
@@ -72,6 +72,7 @@ export default function ImageCard({ img, onOpen }) {
     >
       <div className="relative aspect-square overflow-hidden bg-black/20">
         <img src={img.url} alt="" loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+        
         <div className="absolute inset-0 bg-linear-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4 flex flex-col justify-end">
           <p className="text-white text-[10px] font-bold uppercase tracking-widest mb-1 opacity-60">
             {img.author || "Unsplash Creator"}

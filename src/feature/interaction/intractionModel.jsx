@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { db } from "../../services/instantDb";
 import { id } from "@instantdb/react";
 import { MessageSquare } from "lucide-react";
 
-// ✅ Modular Imports & Store
+// Modular Imports & Store
 import { useStore } from "../../store/UseStore";
 import { ImageSection } from "./Component/ImageSection";
 import { CommentList } from "./Component/CommentList";
@@ -11,23 +11,18 @@ import { CommentInput } from "./Component/CommentInput";
 
 export default function InteractionModal({ img, onClose }) {
   const [comment, setComment] = useState("");
-  
-  // ✅ Zustand: Get global identity
   const identity = useStore((state) => state.identity);
   const { name, color } = identity ?? {};
 
-  // 1. Image-Level Sync: Scoped query for this specific image
   const { data, isLoading } = db.useQuery({
-    interactions: {
-      $: { where: { imageId: img.id } },
-    },
+    interactions: { $: { where: { imageId: img.id } } },
   });
 
   const interactions = data?.interactions ?? [];
   const comments = interactions.filter((i) => i.type === "comment");
 
-  // 2. Real-Time Transaction for Comments
-  const handleAddComment = (e) => {
+  // ✅ Performance: Memoized Comment Handler
+  const handleAddComment = useCallback((e) => {
     e.preventDefault();
     if (!comment.trim()) return;
 
@@ -36,17 +31,17 @@ export default function InteractionModal({ img, onClose }) {
         imageId: img.id,
         type: "comment",
         text: comment,
-        user: name,      // ✅ Centralized name
-        userColor: color, // ✅ Centralized color
+        user: name,
+        userColor: color,
         createdAt: Date.now(),
       })
     );
     setComment("");
-  };
+  }, [comment, img.id, name, color]);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-in fade-in duration-300">
-      <div className="bg-panel border border-border w-full max-w-5xl h-[85vh] rounded-3xl overflow-hidden grid grid-cols-1 lg:grid-cols-2 shadow-2xl shadow-black/50">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-4">
+      <div className="bg-panel border border-border w-full max-w-5xl h-[85vh] rounded-3xl overflow-hidden grid grid-cols-1 lg:grid-cols-2 shadow-2xl">
         
         <ImageSection url={img.url} onClose={onClose} />
 

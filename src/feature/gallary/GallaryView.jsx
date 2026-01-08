@@ -70,7 +70,7 @@ export default function GalleryView() {
           animate={{ opacity: 1, x: 0 }}
         >
           <h2 className="text-xs font-black uppercase tracking-[0.3em] text-blue-400 mb-1 flex items-center gap-2">
-            <Sparkles size={14} /> Global Discovery
+            <Sparkles size={14} /> FotoOwl
           </h2>
           <p className="text-2xl lg:text-3xl font-bold text-white tracking-tight">
             Curated Visuals
