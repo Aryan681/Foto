@@ -13,7 +13,7 @@ export default function ImageCard({ img, onOpen }) {
   const [showEmojiBar, setShowEmojiBar] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [showHeart, setShowHeart] = useState(false);
-  const [showUndo, setShowUndo] = useState(false); // ✅ NEW: Undo animation
+  const [showUndo, setShowUndo] = useState(false); 
   const lastTap = useRef(0);
   const timerRef = useRef(null);
   
@@ -26,7 +26,6 @@ export default function ImageCard({ img, onOpen }) {
 
   const interactions = data?.interactions ?? [];
 
-  // Check if current user already reacted
   const userReaction = useMemo(() => {
     return interactions.find(i => i.type === 'emoji' && i.userId === userId);
   }, [interactions, userId]);
@@ -42,16 +41,14 @@ export default function ImageCard({ img, onOpen }) {
     };
   }, [interactions]);
 
-  // ✅ UPDATED: Add, Update, or Remove reaction
+  //  Add, Update, or Remove reaction
   const handleReactionToggle = useCallback((emoji) => {
     if (userReaction) {
       if (userReaction.emoji === emoji) {
-        // ✅ Same emoji clicked = REMOVE reaction
         db.transact(db.tx.interactions[userReaction.id].delete());
         setShowUndo(true);
         setTimeout(() => setShowUndo(false), 800);
       } else {
-        // Different emoji = UPDATE reaction
         db.transact(
           db.tx.interactions[userReaction.id].update({ emoji, createdAt: Date.now() })
         );
@@ -59,7 +56,7 @@ export default function ImageCard({ img, onOpen }) {
         setTimeout(() => setShowHeart(false), 800);
       }
     } else {
-      // No reaction = ADD new reaction
+      // No reaction 
       db.transact(
         db.tx.interactions[id()].update({
           imageId: img.id,
@@ -80,10 +77,10 @@ export default function ImageCard({ img, onOpen }) {
   const handleInteraction = (e) => {
     const now = Date.now();
     if (now - lastTap.current < 300) {
-      // Double Tap: Toggle heart reaction
+      // Double Tap
       handleReactionToggle("❤️");
     } else {
-      // Single Tap: Delayed Open
+      // Single Tap
       timerRef.current = setTimeout(() => {
         if (Date.now() - lastTap.current >= 300) {
           onOpen();
@@ -115,7 +112,7 @@ export default function ImageCard({ img, onOpen }) {
     >
       <div className="relative aspect-square overflow-hidden bg-white/5">
         
-        {/* ✅ Heart Animation (Add/Update) */}
+        {/*  Heart Animation  */}
         <AnimatePresence>
           {showHeart && (
             <motion.div
@@ -129,7 +126,7 @@ export default function ImageCard({ img, onOpen }) {
           )}
         </AnimatePresence>
 
-        {/* ✅ NEW: Undo Animation (Remove) */}
+        {/*  Undo Animation  */}
         <AnimatePresence>
           {showUndo && (
             <motion.div

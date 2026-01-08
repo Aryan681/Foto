@@ -28,9 +28,7 @@ export const ImageSection = ({ url, onClose, imgId }) => {
     const DOUBLE_TAP_DELAY = 300;
 
     if (now - lastTap.current < DOUBLE_TAP_DELAY) {
-      // ✅ Double Tap: Toggle heart reaction
       if (userReaction && userReaction.emoji === "❤️") {
-        // Remove reaction if already has heart
         db.transact(db.tx.interactions[userReaction.id].delete());
         setShowUndo(true);
         setTimeout(() => setShowUndo(false), 800);
@@ -69,7 +67,6 @@ export const ImageSection = ({ url, onClose, imgId }) => {
       onClick={handleInteraction}
       className="relative w-full h-full bg-black/80 flex items-center justify-center overflow-hidden cursor-pointer"
     >
-      {/* ✅ Heart Animation (Add/Update) */}
       <AnimatePresence>
         {showHeart && (
           <motion.div
@@ -83,7 +80,6 @@ export const ImageSection = ({ url, onClose, imgId }) => {
         )}
       </AnimatePresence>
 
-      {/* ✅ NEW: Undo Animation (Remove) */}
       <AnimatePresence>
         {showUndo && (
           <motion.div
@@ -114,7 +110,6 @@ export const ImageSection = ({ url, onClose, imgId }) => {
         <X size={20} />
       </button>
 
-      {/* ✅ NEW: Visual hint for current reaction status */}
       {userReaction && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-black/60 backdrop-blur border border-white/10 rounded-full text-xs text-white/80 flex items-center gap-2 pointer-events-none">
           <span className="text-lg">{userReaction.emoji}</span>

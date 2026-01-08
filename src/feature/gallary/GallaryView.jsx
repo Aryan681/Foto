@@ -11,9 +11,7 @@ import { useStore } from "../../store/UseStore";
 import ImageCard from "./ImageCard";
 import InteractionModal from "../interaction/intractionModel";
 
-/**
- * Skeleton Loader for high-end initial state
- */
+
 const SkeletonCard = () => (
   <div className="bg-white/5 border border-white/5 rounded-2xl aspect-square overflow-hidden animate-pulse">
     <div className="w-full h-full bg-gradient-to-br from-white/5 to-transparent" />
@@ -21,11 +19,9 @@ const SkeletonCard = () => (
 );
 
 export default function GalleryView() {
-  // 1. Zustand Global State
   const { selectedImg, setSelectedImg } = useStore();
   const loadMoreRef = useRef(null);
 
-  // 2. Optimized API Handling with TanStack Query
   const { 
     data, 
     fetchNextPage, 
@@ -39,22 +35,19 @@ export default function GalleryView() {
     staleTime: 5 * 60 * 1000, // Keep data fresh for 5 mins
   });
 
-  // 3. Performance Optimization: Memoize flattened image array
   const images = useMemo(() => 
     data?.pages.flatMap((p) => p.images) ?? [], 
     [data]
   );
 
-  // 4. Proactive Infinite Scroll with IntersectionObserver
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        // Trigger fetch when user is close to bottom
         if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
           fetchNextPage();
         }
       },
-      { rootMargin: "200px" } // Proactive fetch before user hits bottom
+      { rootMargin: "200px" } 
     );
 
     if (loadMoreRef.current) observer.observe(loadMoreRef.current);
@@ -63,7 +56,6 @@ export default function GalleryView() {
 
   return (
     <div className="p-4 lg:p-8 space-y-8">
-      {/* Aesthetic Header Area */}
       <header className="flex items-end justify-between px-2">
         <motion.div 
           initial={{ opacity: 0, x: -20 }} 
@@ -81,11 +73,9 @@ export default function GalleryView() {
         </div>
       </header>
 
-      {/* Grid Implementation with Staggered Entry */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-8">
         <AnimatePresence mode="popLayout">
           {isLoading ? (
-            // Initial Skeleton State
             Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
           ) : (
             images.map((img, index) => (
@@ -95,12 +85,12 @@ export default function GalleryView() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ 
                   duration: 0.4, 
-                  delay: (index % 12) * 0.03 // DSA Staggering algorithm
+                  delay: (index % 12) * 0.03 
                 }}
               >
                 <ImageCard 
                   img={img} 
-                  onOpen={() => setSelectedImg(img)} // Triggers Zustand store
+                  onOpen={() => setSelectedImg(img)} 
                 />
               </motion.div>
             ))
@@ -108,7 +98,6 @@ export default function GalleryView() {
         </AnimatePresence>
       </div>
 
-      {/* Optimized Infinite Scroll Anchor */}
       <div ref={loadMoreRef} className="h-40 flex flex-col items-center justify-center gap-4">
         {isFetchingNextPage && (
           <>
@@ -120,7 +109,6 @@ export default function GalleryView() {
         )}
       </div>
 
-      {/* Focused Image View (Modal) */}
       {selectedImg && (
         <InteractionModal 
           img={selectedImg} 

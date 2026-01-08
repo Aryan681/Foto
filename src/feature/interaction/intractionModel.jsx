@@ -43,7 +43,7 @@ export default function InteractionModal({ img, onClose }) {
         type: "comment",
         text: comment,
         user: name,
-        userId, // ✅ Track user for comments too
+        userId, 
         userColor: color,
         createdAt: Date.now(),
       })

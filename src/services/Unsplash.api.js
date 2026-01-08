@@ -1,5 +1,4 @@
 export async function fetchImages(page = 1) {
-  // Simulating API latency
   await new Promise((r) => setTimeout(r, 600));
 
  
