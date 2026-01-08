@@ -2,9 +2,11 @@ import React, { useState } from "react";
 import { db } from "../../services/instantDb";
 import { id } from "@instantdb/react";
 import { X, Send, MessageSquare, Clock } from "lucide-react";
+import { getIdentity } from "../../utils/identity"; // ✅ Import the identity utility
 
 export default function InteractionModal({ img, onClose }) {
   const [comment, setComment] = useState("");
+  const { name, color } = getIdentity(); // ✅ Get persistent identity (name and color)
 
   // 1. Image-Level Sync: Scoped query for this specific image [cite: 40, 47]
   const { data, isLoading } = db.useQuery({
@@ -17,24 +19,22 @@ export default function InteractionModal({ img, onClose }) {
   const comments = interactions.filter((i) => i.type === "comment");
 
   // 2. Real-Time Transaction for Comments [cite: 34, 35]
-const handleAddComment = (e) => {
-  e.preventDefault();
-  if (!comment.trim()) return;
+  const handleAddComment = (e) => {
+    e.preventDefault();
+    if (!comment.trim()) return;
 
-  const identity = getIdentity();
-
-  db.transact(
-    db.tx.interactions[id()].update({
-      imageId: img.id,
-      type: "comment",
-      text: comment,
-      user: identity.name,       // ✅ Shows real name in feed
-      userColor: identity.color,
-      createdAt: Date.now(),
-    })
-  );
-  setComment("");
-};
+    db.transact(
+      db.tx.interactions[id()].update({
+        imageId: img.id,
+        type: "comment",
+        text: comment,
+        user: name, // ✅ Use persistent name instead of random string 
+        userColor: color, // ✅ Store color for consistent UI display
+        createdAt: Date.now(),
+      })
+    );
+    setComment("");
+  };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-in fade-in duration-300">
@@ -68,7 +68,7 @@ const handleAddComment = (e) => {
             </div>
           </header>
 
-          {/* Real-time Comment Stream [cite: 35, 45] */}
+          {/* Real-time Comment Stream  */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
             {isLoading ? (
               <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-600">
@@ -84,9 +84,19 @@ const handleAddComment = (e) => {
               comments.sort((a,b) => b.createdAt - a.createdAt).map((c) => (
                 <div key={c.id} className="animate-in slide-in-from-bottom-2 duration-300">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-black text-accent uppercase tracking-tighter">
-                      {c.user}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {/* ✅ Identity dot with persistent color */}
+                      <div 
+                        className="w-1.5 h-1.5 rounded-full" 
+                        style={{ backgroundColor: c.userColor || '#888' }} 
+                      />
+                      <span 
+                        className="text-xs font-black uppercase tracking-tighter"
+                        style={{ color: c.userColor || '#fff' }}
+                      >
+                        {c.user}
+                      </span>
+                    </div>
                     <div className="flex items-center gap-1 text-[9px] text-gray-500 font-mono">
                       <Clock size={10} />
                       {new Date(c.createdAt).toLocaleTimeString()}

@@ -1,7 +1,8 @@
-import { db } from "../../services/instantDb";
+import { init } from "@instantdb/react";
+import schema from "./instantDb.schema";
 
-export async function emitInteraction(event) {
-  await db.transact(
-    db.tx.interactions[event.id].update(event)
-  );
-}
+export const db = init({
+  appId: import.meta.env.VITE_INSTANTDB_APP_ID,
+  schema,
+  devtool: false, 
+});

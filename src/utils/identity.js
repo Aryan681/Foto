@@ -2,8 +2,8 @@ export const getIdentity = () => {
   const existing = localStorage.getItem("user_identity");
   if (existing) return JSON.parse(existing);
 
-  const adjectives = ["Creative", "Swift", "Zen", "Hyper", "Bright"];
-  const nouns = ["Pixel", "Coder", "Lens", "Vision", "Frame"];
+  const adjectives = ["Cool", "Swift", "Bright", "Zen", "Hyper"];
+  const nouns = ["Pixel", "Coder", "User", "Gamer", "Foto"];
   const colors = ["#60a5fa", "#34d399", "#fbbf24", "#f87171", "#a78bfa"];
 
   const newIdentity = {
@@ -15,4 +15,4 @@ export const getIdentity = () => {
 
   localStorage.setItem("user_identity", JSON.stringify(newIdentity));
   return newIdentity;
-};
+}; 
