@@ -49,6 +49,7 @@ The application utilizes a **Graph-based NoSQL schema** to handle real-time sync
     "imageId": "string",   // Scoped Image ID from Unsplash/Picsum
     "type": "string",      // 'emoji' | 'comment'
     "user": "string",      // Persistent Identity Name
+    "userId": "string",    // unique user 
     "userColor": "string", // Persistent Identity Color
     "emoji": "string",     // Optional: Selected emoji
     "text": "string",      // Optional: Comment text
@@ -120,7 +121,6 @@ npm run dev
 * [x] **Controlled Inputs**: Sanitized and managed comment forms.
 * [x] **Immutable State**: Strictly followed functional update patterns.
 
-```
 
 
 

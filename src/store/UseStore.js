@@ -1,17 +1,15 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { nanoid } from "nanoid"; // Install: npm install nanoid
+import { nanoid } from "nanoid"; 
 
 export const useStore = create(
   persist(
     (set) => ({
-      // --- Identity State ---
       identity: null,
       
-      // Action to generate identity if it doesn't exist
       initializeIdentity: () => {
         set((state) => {
-          if (state.identity) return state; // Already exists
+          if (state.identity) return state; 
 
           const adjectives = ["Swift", "Zen", "Hyper", "Vivid", "Neon"];
           const nouns = ["Pixel", "Coder", "Vision", "Lens", "Frame"];
@@ -19,7 +17,7 @@ export const useStore = create(
 
           return {
             identity: {
-              id: nanoid(), // ✅ NEW: Unique ID for tracking reactions
+              id: nanoid(), 
               name: `${adjectives[Math.floor(Math.random() * adjectives.length)]} ${
                 nouns[Math.floor(Math.random() * nouns.length)]
               }`,
@@ -29,7 +27,6 @@ export const useStore = create(
         });
       },
 
-      // --- UI State ---
       selectedImg: null,
       setSelectedImg: (img) => set({ selectedImg: img }),
 
