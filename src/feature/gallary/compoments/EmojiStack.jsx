@@ -28,7 +28,7 @@ export const EmojiStack = ({ uniqueEmojis, totalCount, onMouseEnter, onMouseLeav
               key={idx} 
               className={`
                 text-2xl drop-shadow-md select-none transition-all
-                ${isUserEmoji ? "scale-110 z-20 animate-pulse" : ""}
+                ${isUserEmoji ? "scale-110 z-20 " : ""}
               `}
               style={{ zIndex: isUserEmoji ? 20 : 10 - idx }}
             >
